@@ -154,6 +154,51 @@ struct DeferredTests {
     // Then
     await #expect(throws: FakeError.self) { try await deferred.value }
   }
+
+  @Test(
+    "Should ignore subsequent completions after value",
+    arguments: [
+      Result.success("other result"),
+      Result.failure(FakeError() as Error),
+    ]
+  )
+  func shouldIgnoreSubsequentCompletionsAfterValue(
+    secondCompletion: Result<String, Error>,
+  ) async throws {
+    // Given
+    let deferred = Deferred<String>()
+    deferred.complete(value: "First value")
+    deferred.complete(with: secondCompletion)
+
+    // When
+    let result = try await deferred.value
+
+    // Then
+    #expect(result == "First value")
+  }
+
+  @Test(
+    "Should ignore subsequent completions after error",
+    arguments: [
+      Result.success("other result"),
+      Result.failure(FakeError2() as Error),
+    ]
+  )
+  func shouldIgnoreSubsequentCompletionsAfterError(
+    secondCompletion: Result<String, Error>,
+  ) async throws {
+    // Given
+    let deferred = Deferred<String>()
+    deferred.complete(error: FakeError())
+    deferred.complete(with: secondCompletion)
+
+    // When
+    let task = Task { try await deferred.value }
+
+    // Then
+    try await #require(throws: FakeError.self) { try await task.value }
+  }
 }
 
-fileprivate struct FakeError: Error {}
+struct FakeError: Error {}
+struct FakeError2: Error {}

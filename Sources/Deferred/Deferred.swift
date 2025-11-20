@@ -1,19 +1,18 @@
-// The Swift Programming Language
-// https://docs.swift.org/swift-book
-
 actor Deferred<Value: Sendable> {
   private var result: Result<Value, Error>? = nil
   private var continuations: [CheckedContinuation<Value, Error>] = []
 
   nonisolated func complete(value: Value) {
-    Task {
-      await resolve(.success(value))
-    }
+    complete(with: .success(value))
   }
 
   nonisolated func complete(error: Error) {
-    Task {
-      await resolve(.failure(error))
+    complete(with: .failure(error))
+  }
+
+  nonisolated func complete(with result: Result<Value, Error>) {
+    Task { @DeferredExecutor in
+      await resolve(result)
     }
   }
 
@@ -30,6 +29,8 @@ actor Deferred<Value: Sendable> {
   }
 
   private func resolve(_ result: Result<Value, Error>) {
+    guard self.result == nil else { return }
+
     self.result = result
     let copy = continuations
     continuations.removeAll(keepingCapacity: true)
@@ -38,4 +39,9 @@ actor Deferred<Value: Sendable> {
       continuation.resume(with: result)
     }
   }
+}
+
+@globalActor
+actor DeferredExecutor {
+  static let shared = DeferredExecutor()
 }
