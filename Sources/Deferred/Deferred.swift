@@ -2,19 +2,33 @@
 // https://docs.swift.org/swift-book
 
 actor Deferred<Value: Sendable> {
-  private var continuation: CheckedContinuation<Value, Error>? = nil
+  private var result: Result<Value, Error>? = nil
+  private var continuations: [CheckedContinuation<Value, Error>] = []
 
   nonisolated func complete(value: Value) {
     Task {
-      await continuation?.resume(returning: value)
+      await resolve(.success(value))
     }
   }
 
   var value: Value {
     get async throws {
-      try await withCheckedThrowingContinuation { continuation in
-        self.continuation = continuation
+      if let result {
+        return try result.get()
       }
+
+      return try await withCheckedThrowingContinuation { continuation in
+        self.continuations.append(continuation)
+      }
+    }
+  }
+
+  private func resolve(_ result: Result<Value, Error>) {
+    self.result = result
+    let copy = continuations
+
+    for continuation in copy {
+      continuation.resume(with: result)
     }
   }
 }
