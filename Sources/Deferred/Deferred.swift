@@ -26,6 +26,7 @@ actor Deferred<Value: Sendable> {
   private func resolve(_ result: Result<Value, Error>) {
     self.result = result
     let copy = continuations
+    continuations.removeAll(keepingCapacity: true)
 
     for continuation in copy {
       continuation.resume(with: result)

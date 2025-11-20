@@ -46,7 +46,7 @@ struct DeferredTests {
     #expect(result3 == 5)
   }
 
-  @Test("Should get multiple values after complete")
+  @Test("Should get multiple values before complete")
   func shouldGetMultipleBeforeComplete() async throws {
     // Given
     let deferred = Deferred<Int>()
@@ -61,6 +61,20 @@ struct DeferredTests {
     #expect(try await result1 == 5)
     #expect(try await result2 == 5)
     #expect(try await result3 == 5)
+  }
+
+  @Test("Should not throw on another completion")
+  func shouldNotThrowOnAnotherCompletion() async throws {
+    // Given
+    let deferred = Deferred<Int>()
+    async let result = deferred.value
+    deferred.complete(value: 5)
+
+    // When
+    deferred.complete(value: 5)
+
+    // Then
+    #expect(try await result == 5)
   }
 
   /*
