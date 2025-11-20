@@ -77,8 +77,83 @@ struct DeferredTests {
     #expect(try await result == 5)
   }
 
-  /*
-   Should not throw on another completion
-   Should get multiple values before complete
-   */
+  @Test("Should get value before failure")
+  func shouldGetBeforeFail() async throws {
+    // Given
+    let deferred = Deferred<Int>()
+    let expectedError = FakeError()
+
+    // When
+    let task = Task { try await deferred.value }
+
+    // Then
+    deferred.complete(error: expectedError)
+    await #expect(throws: FakeError.self) {
+      try await task.value
+    }
+  }
+
+  @Test("Should get value after failure")
+  func shouldGetAfterFail() async throws {
+    // Given
+    let deferred = Deferred<Int>()
+    let expectedError = FakeError()
+
+    // When
+    deferred.complete(error: expectedError)
+
+    // Then
+    await #expect(throws: FakeError.self) {
+      try await deferred.value
+    }
+  }
+
+  @Test("Should get multiple values after failure")
+  func shouldGetMultipleAfterFailure() async throws {
+    // Given
+    let deferred = Deferred<Int>()
+    deferred.complete(error: FakeError())
+
+    // When
+    let result1 = Task { try await deferred.value }
+    let result2 = Task { try await deferred.value }
+    let result3 = Task { try await deferred.value }
+
+    // Then
+    await #expect(throws: FakeError.self) { try await result1.value }
+    await #expect(throws: FakeError.self) { try await result2.value }
+    await #expect(throws: FakeError.self) { try await result3.value }
+  }
+
+  @Test("Should get multiple values before complete")
+  func shouldGetMultipleBeforeFailure() async throws {
+    // Given
+    let deferred = Deferred<Int>()
+
+    // When
+    let result1 = Task { try await deferred.value }
+    let result2 = Task { try await deferred.value }
+    let result3 = Task { try await deferred.value }
+
+    // Then
+    deferred.complete(error: FakeError())
+    await #expect(throws: FakeError.self) { try await result1.value }
+    await #expect(throws: FakeError.self) { try await result2.value }
+    await #expect(throws: FakeError.self) { try await result3.value }
+  }
+
+  @Test("Should not throw on another completion")
+  func shouldNotThrowOnAnotherFailure() async throws {
+    // Given
+    let deferred = Deferred<Int>()
+    deferred.complete(error: FakeError())
+
+    // When
+    deferred.complete(error: FakeError())
+
+    // Then
+    await #expect(throws: FakeError.self) { try await deferred.value }
+  }
 }
+
+fileprivate struct FakeError: Error {}

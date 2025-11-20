@@ -11,6 +11,12 @@ actor Deferred<Value: Sendable> {
     }
   }
 
+  nonisolated func complete(error: Error) {
+    Task {
+      await resolve(.failure(error))
+    }
+  }
+
   var value: Value {
     get async throws {
       if let result {
