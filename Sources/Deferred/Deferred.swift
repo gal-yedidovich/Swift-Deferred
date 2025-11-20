@@ -22,6 +22,7 @@ actor Deferred<Value: Sendable> {
         return try result.get()
       }
 
+      try Task.checkCancellation()
       return try await withCheckedThrowingContinuation { continuation in
         self.continuations.append(continuation)
       }

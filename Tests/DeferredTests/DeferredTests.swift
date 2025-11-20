@@ -71,7 +71,7 @@ struct DeferredTests {
     deferred.complete(value: 5)
 
     // When
-    deferred.complete(value: 5)
+    deferred.complete(value: 15)
 
     // Then
     #expect(try await result == 5)
@@ -149,7 +149,7 @@ struct DeferredTests {
     deferred.complete(error: FakeError())
 
     // When
-    deferred.complete(error: FakeError())
+    deferred.complete(error: FakeError2())
 
     // Then
     await #expect(throws: FakeError.self) { try await deferred.value }
@@ -197,6 +197,22 @@ struct DeferredTests {
 
     // Then
     try await #require(throws: FakeError.self) { try await task.value }
+  }
+
+  @Test("Should handle task cancellation")
+  func shouldHandleTaskCancellation() async throws {
+    // Given
+    let deferred = Deferred<Bool>()
+    let task = Task { try await deferred.value }
+    task.cancel()
+
+    // When
+    deferred.complete(value: false)
+
+    // Then
+    await #expect(throws: CancellationError.self) {
+      try await task.value
+    }
   }
 }
 
