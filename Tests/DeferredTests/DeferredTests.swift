@@ -1,7 +1,7 @@
 import Testing
 @testable import Deferred
 
-@Suite
+@Suite("Deferred Tests")
 struct DeferredTests {
   @Test("Should get value before complete")
   func shouldGetBeforeComplete() async throws {

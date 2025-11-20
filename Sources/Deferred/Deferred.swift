@@ -1,22 +1,24 @@
-actor Deferred<Value: Sendable> {
+public actor Deferred<Value: Sendable> {
   private var result: Result<Value, Error>? = nil
   private var continuations: [CheckedContinuation<Value, Error>] = []
 
-  nonisolated func complete(value: Value) {
+  public init() {}
+
+  public nonisolated func complete(value: Value) {
     complete(with: .success(value))
   }
 
-  nonisolated func complete(error: Error) {
+  public nonisolated func complete(error: Error) {
     complete(with: .failure(error))
   }
 
-  nonisolated func complete(with result: Result<Value, Error>) {
+  public nonisolated func complete(with result: Result<Value, Error>) {
     Task { @DeferredExecutor in
       await resolve(result)
     }
   }
 
-  var value: Value {
+  public var value: Value {
     get async throws {
       if let result {
         return try result.get()
