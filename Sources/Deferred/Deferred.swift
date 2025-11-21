@@ -1,6 +1,8 @@
+import Foundation
+
 public actor Deferred<Value: Sendable> {
   private var result: Result<Value, Error>? = nil
-  private var continuations: [CheckedContinuation<Value, Error>] = []
+  private var continuations: [UUID: CheckedContinuation<Value, Error>] = [:]
 
   public init() {}
 
@@ -26,10 +28,23 @@ public actor Deferred<Value: Sendable> {
         return try result.get()
       }
 
-      return try await withCheckedThrowingContinuation { continuation in
-        self.continuations.append(continuation)
+      let id = UUID()
+      return try await withTaskCancellationHandler {
+        return try await withCheckedThrowingContinuation { continuation in
+          self.continuations[id] = continuation
+        }
+      } onCancel: {
+        Task { @DeferredExecutor in await cancel(id: id) }
       }
     }
+  }
+
+  private func cancel(id: UUID) {
+    guard let continuation = self.continuations.removeValue(forKey: id) else {
+      return
+    }
+
+    continuation.resume(throwing: CancellationError())
   }
 
   private func resolve(_ result: Result<Value, Error>) {
@@ -39,7 +54,7 @@ public actor Deferred<Value: Sendable> {
     let copy = continuations
     continuations.removeAll(keepingCapacity: true)
 
-    for continuation in copy {
+    for (_, continuation) in copy {
       continuation.resume(with: result)
     }
   }

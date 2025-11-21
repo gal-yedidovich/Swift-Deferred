@@ -199,8 +199,8 @@ struct DeferredTests {
     try await #require(throws: FakeError.self) { try await task.value }
   }
 
-  @Test("Should ignore completion after cancellation")
-  func shouldHandleTaskCancellation() async throws {
+  @Test("Should throw when getting value of cancelled task")
+  func shouldThrowWhenGettingValueOfCancelledTask() async throws {
     // Given
     let deferred = Deferred<Bool>()
     let task = Task {
@@ -213,6 +213,41 @@ struct DeferredTests {
     deferred.complete(value: false)
 
     // Then
+    await #expect(throws: CancellationError.self) {
+      try await task.value
+    }
+  }
+
+  @Test("Should cancel while pending")
+  func shouldHandleTaskCancellation2() async throws {
+    // Given
+    let deferred = Deferred<Bool>()
+    let task = Task { try await deferred.value }
+    try await Task.sleep(for: .milliseconds(1))
+
+    // When
+    task.cancel()
+
+    // Then
+    deferred.complete(value: false)
+    try await #require(throws: CancellationError.self) {
+      try await task.value
+    }
+  }
+
+  @Test("Should cancel a task and complete another")
+  func shouldHandleTaskCancellation3() async throws {
+    // Given
+    let deferred = Deferred<String>()
+    let task = Task { try await deferred.value }
+    task.cancel()
+    async let value = deferred.value
+
+    // When
+    deferred.complete(value: "done")
+
+    // Then
+    #expect(try await value == "done")
     await #expect(throws: CancellationError.self) {
       try await task.value
     }
