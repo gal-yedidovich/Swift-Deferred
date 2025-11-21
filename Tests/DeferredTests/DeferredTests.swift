@@ -199,11 +199,14 @@ struct DeferredTests {
     try await #require(throws: FakeError.self) { try await task.value }
   }
 
-  @Test("Should handle task cancellation")
+  @Test("Should ignore completion after cancellation")
   func shouldHandleTaskCancellation() async throws {
     // Given
     let deferred = Deferred<Bool>()
-    let task = Task { try await deferred.value }
+    let task = Task {
+      try? await Task.sleep(for: .seconds(5))
+      return try await deferred.value
+    }
     task.cancel()
 
     // When

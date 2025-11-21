@@ -20,11 +20,12 @@ public actor Deferred<Value: Sendable> {
 
   public var value: Value {
     get async throws {
+      try Task.checkCancellation()
+
       if let result {
         return try result.get()
       }
 
-      try Task.checkCancellation()
       return try await withCheckedThrowingContinuation { continuation in
         self.continuations.append(continuation)
       }
@@ -32,7 +33,7 @@ public actor Deferred<Value: Sendable> {
   }
 
   private func resolve(_ result: Result<Value, Error>) {
-    guard self.result == nil else { return }
+    if Task.isCancelled || self.result != nil { return }
 
     self.result = result
     let copy = continuations
