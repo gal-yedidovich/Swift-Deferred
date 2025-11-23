@@ -1,12 +1,19 @@
+//
+//  CompletableDeferredTests.swift
+//  Swift-Deferred
+//
+//  Created by Gal Yedidovich on 23/11/2025.
+//
+
 import Testing
 @testable import Deferred
 
-@Suite("Deferred Tests")
+@Suite("CompletableDeferred Tests")
 struct DeferredTests {
   @Test("Should get value before complete")
   func shouldGetBeforeComplete() async throws {
     // Given
-    let deferred = Deferred<Int>()
+    let deferred = CompletableDeferred<Int>()
 
     // When
     async let result = deferred.value
@@ -19,7 +26,7 @@ struct DeferredTests {
   @Test("Should get value after complete")
   func shouldGetAfterComplete() async throws {
     // Given
-    let deferred = Deferred<Int>()
+    let deferred = CompletableDeferred<Int>()
     deferred.complete(value: 5)
 
     // When
@@ -32,7 +39,7 @@ struct DeferredTests {
   @Test("Should get multiple values after complete")
   func shouldGetMultipleAfterComplete() async throws {
     // Given
-    let deferred = Deferred<Int>()
+    let deferred = CompletableDeferred<Int>()
     deferred.complete(value: 5)
 
     // When
@@ -49,7 +56,7 @@ struct DeferredTests {
   @Test("Should get multiple values before complete")
   func shouldGetMultipleBeforeComplete() async throws {
     // Given
-    let deferred = Deferred<Int>()
+    let deferred = CompletableDeferred<Int>()
 
     // When
     async let result1 = deferred.value
@@ -66,7 +73,7 @@ struct DeferredTests {
   @Test("Should not throw on another completion")
   func shouldNotThrowOnAnotherCompletion() async throws {
     // Given
-    let deferred = Deferred<Int>()
+    let deferred = CompletableDeferred<Int>()
     async let result = deferred.value
     deferred.complete(value: 5)
 
@@ -80,7 +87,7 @@ struct DeferredTests {
   @Test("Should get value before failure")
   func shouldGetBeforeFail() async throws {
     // Given
-    let deferred = Deferred<Int>()
+    let deferred = CompletableDeferred<Int>()
     let expectedError = FakeError()
 
     // When
@@ -96,7 +103,7 @@ struct DeferredTests {
   @Test("Should get value after failure")
   func shouldGetAfterFail() async throws {
     // Given
-    let deferred = Deferred<Int>()
+    let deferred = CompletableDeferred<Int>()
     let expectedError = FakeError()
 
     // When
@@ -111,7 +118,7 @@ struct DeferredTests {
   @Test("Should get multiple values after failure")
   func shouldGetMultipleAfterFailure() async throws {
     // Given
-    let deferred = Deferred<Int>()
+    let deferred = CompletableDeferred<Int>()
     deferred.complete(error: FakeError())
 
     // When
@@ -128,7 +135,7 @@ struct DeferredTests {
   @Test("Should get multiple values before complete")
   func shouldGetMultipleBeforeFailure() async throws {
     // Given
-    let deferred = Deferred<Int>()
+    let deferred = CompletableDeferred<Int>()
 
     // When
     let result1 = Task { try await deferred.value }
@@ -145,7 +152,7 @@ struct DeferredTests {
   @Test("Should not throw on another completion")
   func shouldNotThrowOnAnotherFailure() async throws {
     // Given
-    let deferred = Deferred<Int>()
+    let deferred = CompletableDeferred<Int>()
     deferred.complete(error: FakeError())
 
     // When
@@ -166,7 +173,7 @@ struct DeferredTests {
     secondCompletion: Result<String, Error>,
   ) async throws {
     // Given
-    let deferred = Deferred<String>()
+    let deferred = CompletableDeferred<String>()
     deferred.complete(value: "First value")
     deferred.complete(with: secondCompletion)
 
@@ -188,7 +195,7 @@ struct DeferredTests {
     secondCompletion: Result<String, Error>,
   ) async throws {
     // Given
-    let deferred = Deferred<String>()
+    let deferred = CompletableDeferred<String>()
     deferred.complete(error: FakeError())
     deferred.complete(with: secondCompletion)
 
@@ -202,7 +209,7 @@ struct DeferredTests {
   @Test("Should throw when getting value of cancelled task")
   func shouldThrowWhenGettingValueOfCancelledTask() async throws {
     // Given
-    let deferred = Deferred<Bool>()
+    let deferred = CompletableDeferred<Bool>()
     let task = Task {
       try? await Task.sleep(for: .seconds(5))
       return try await deferred.value
@@ -221,7 +228,7 @@ struct DeferredTests {
   @Test("Should cancel while pending")
   func shouldHandleTaskCancellation2() async throws {
     // Given
-    let deferred = Deferred<Bool>()
+    let deferred = CompletableDeferred<Bool>()
     let task = Task { try await deferred.value }
     try await Task.sleep(for: .milliseconds(1))
 
@@ -238,7 +245,7 @@ struct DeferredTests {
   @Test("Should cancel a task and complete another")
   func shouldHandleTaskCancellation3() async throws {
     // Given
-    let deferred = Deferred<String>()
+    let deferred = CompletableDeferred<String>()
     let task = Task { try await deferred.value }
     task.cancel()
     async let value = deferred.value
