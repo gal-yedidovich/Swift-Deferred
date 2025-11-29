@@ -23,7 +23,7 @@ struct WithTimeoutTests {
     #expect(result == "Bubu")
   }
 
-  @Test("Should timeout task")
+  @Test("Should timeout task", .timeLimit(.minutes(1)))
   func timeoutTask() async throws {
     // Given
     let expectedTimeout = 0.00001
@@ -31,7 +31,7 @@ struct WithTimeoutTests {
     // When
     let task = Task {
       try await withTimeout(expectedTimeout) {
-        try await Task.sleep(for: .seconds(60))
+        try await Task.sleep(for: .seconds(120))
       }
     }
 
