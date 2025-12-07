@@ -6,7 +6,6 @@
 //
 
 import Testing
-
 import Deferred
 
 @Suite("WithTimeout Tests")

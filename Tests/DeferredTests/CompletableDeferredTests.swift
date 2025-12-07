@@ -6,7 +6,7 @@
 //
 
 import Testing
-@testable import Deferred
+import Deferred
 
 @Suite("CompletableDeferred Tests")
 struct CompletableDeferredTests {

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public actor CompletableDeferred<Value: Sendable>: Deferred {
+public actor CompletableDeferred<Value: Sendable> {
   private var result: Result<Value, Error>? = nil
   private var continuations: [UUID: CheckedContinuation<Value, Error>] = [:]
 
@@ -27,6 +27,20 @@ public actor CompletableDeferred<Value: Sendable>: Deferred {
     }
   }
 
+  private func resolve(_ result: Result<Value, Error>) {
+    if Task.isCancelled || self.result != nil { return }
+
+    self.result = result
+    let copy = continuations
+    continuations.removeAll(keepingCapacity: true)
+
+    for (_, continuation) in copy {
+      continuation.resume(with: result)
+    }
+  }
+}
+
+extension CompletableDeferred: Deferred {
   public var value: Value {
     get async throws {
       try Task.checkCancellation()
@@ -52,18 +66,6 @@ public actor CompletableDeferred<Value: Sendable>: Deferred {
     }
 
     continuation.resume(throwing: CancellationError())
-  }
-
-  private func resolve(_ result: Result<Value, Error>) {
-    if Task.isCancelled || self.result != nil { return }
-
-    self.result = result
-    let copy = continuations
-    continuations.removeAll(keepingCapacity: true)
-
-    for (_, continuation) in copy {
-      continuation.resume(with: result)
-    }
   }
 }
 
