@@ -132,7 +132,7 @@ struct CompletableDeferredTests {
     await #expect(throws: FakeError.self) { try await result3.value }
   }
 
-  @Test("Should get multiple values before complete")
+  @Test("Should get multiple values before failure")
   func shouldGetMultipleBeforeFailure() async throws {
     // Given
     let deferred = CompletableDeferred<Int>()
